@@ -75,7 +75,7 @@ does the same job.
 In addition to Arlet's comments, stack writes (e.g. push
 instructions, jsr) write the two bytes to the stack with the
 WE enabled throughout the entire cycle of two bytes, so you
-can't just send the WE signal to asynchronous RAM - you will
+can't just invert WE and send it to asynchronous RAM - you will
 need to add some external stuff to make sure WE goes high
 on every byte.
 
