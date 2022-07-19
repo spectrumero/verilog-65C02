@@ -1,14 +1,12 @@
-========================================================
-A Verilog HDL version of the old MOS 6502 and 65C02 CPUs
-========================================================
+**A Verilog HDL version of the old MOS 6502 and 65C02 CPUs**
 
-Original 6502 core by Arlet Ottens
+Original 6502 (cpu.v) core by Arlet Ottens
 
-65C02 extensions by David Banks and Ed Spittles
+65C02 (cpu_65c02.v) extensions by David Banks and Ed Spittles
 
-==========
-6502 Core
-==========
+WAI extension (cpu_65c02.v) by Dylan Smith
+
+**6502 Core**
 
 Arlet's original 6502 core (cpu.v) is unchanged.
 
@@ -22,9 +20,7 @@ lines for glitchless output signals.
 
 Have fun. 
 
-==========
-65C02 Core
-==========
+**65C02 Core**
 
 A second core (cpu_65c02.v) has been added, based on Arlet's 6502
 core, with additional 65C02 instructions and addressing modes:
@@ -39,8 +35,8 @@ core, with additional 65C02 instructions and addressing modes:
 - NOPs (optional)
 - 65C02 BCD N/Z flags (optional, disabled)
 
-The Rockwell/WDC specific instructions (RMB/SMB/BBR/BBS/WAI/STP) are
-not currently implemented
+The Rockwell/WDC specific instructions (RMB/SMB/BBR/BBS/STP) are
+not currently implemented. WAI is implemented.
 
 The 65C02 core passes the Dormann 6502 test suite, and also passes the
 Dormann 65C02 test suite if the optional support for NOPs and 65C02
@@ -51,9 +47,7 @@ XC6SLX9-2 FPGA, running at 80MHz using 64KB of internel block RAM. It
 just meets timing at 80MHz in this environment. It successfully runs
 BBC Basic IV and Tube Elite.
 
-============
-Known Issues
-============
+**Known Issues**
 
 The Matchbox Co Processor needed one wait state (via RDY) to be added
 to each ROM access (only needed early in the boot process, as
@@ -67,3 +61,21 @@ always @(posedge clk )
         DIHOLD <= DI;
  
 assign DIMUX = ~RDY ? DIHOLD : DI;
+
+**WAI extension**
+
+The WAI instruction was implemented for my ICE40 65C02 project.
+It was implemented according to the information on
+http://www.6502.org/tutorials/65c02opcodes.html .
+It isn't cycle identical to the WDC opcode, but it otherwise
+does the same job.
+
+**Information on using external asynchronous memory**
+
+In addition to Arlet's comments, stack writes (e.g. push
+instructions, jsr) write the two bytes to the stack with the
+WE enabled throughout the entire cycle of two bytes, so you
+can't just send the WE signal to asynchronous RAM - you will
+need to add some external stuff to make sure WE goes high
+on every byte.
+

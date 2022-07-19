@@ -261,7 +261,8 @@ parameter
     IND0   = 6'd50, // (ZP)    - fetch ZP address, and send to ALU (+0)
     JMPIX0 = 6'd51, // JMP (,X)- fetch LSB and send to ALU (+X)
     JMPIX1 = 6'd52, // JMP (,X)- fetch MSB and send to ALU (+Carry)
-    JMPIX2 = 6'd53; // JMP (,X)- Wait for ALU (only if needed)
+    JMPIX2 = 6'd53, // JMP (,X)- Wait for ALU (only if needed)
+    WAIT   = 6'd54; // WAI     - wait for interrupt (DS)
 
 `ifdef SIM
 
@@ -326,6 +327,7 @@ always @*
             JMPIX0: statename = "JMPIX0";
             JMPIX1: statename = "JMPIX1";
             JMPIX2: statename = "JMPIX2";
+            WAIT:   statename = "WAIT";  // DS
 
     endcase
 
@@ -455,6 +457,7 @@ always @*
 
         REG,
         READ,
+        WAIT,           // DS
         WRITE:          AB = { ABH, ABL };
 
         default:        AB = PC;
@@ -732,6 +735,7 @@ always @*
         FETCH:  AI = load_only ? 8'b0 : regfile;
 
         DECODE,
+        WAIT,     // DS
         ABS1:   AI = 8'hxx;     // don't care
 
         default:  AI = 0;
@@ -767,6 +771,7 @@ always @*
          BRA0:  BI = PCL;
 
          DECODE,
+         WAIT,  // DS
          ABS1:  BI = 8'hxx;
 
          default:       BI = DIMUX;
@@ -954,6 +959,7 @@ always @(posedge clk or posedge reset)
             casex ( IR )
                 // TODO Review for simplifications as in verilog the first matching case has priority
                 8'b0000_0000:   state <= BRK0;
+                8'b1100_1011:   state <= WAIT;  // WAI instruction - DS
                 8'b0010_0000:   state <= JSR0;
                 8'b0010_1100:   state <= ABS0;  // BIT abs
                 8'b1001_1100:   state <= ABS0;  // STZ abs
@@ -1068,6 +1074,7 @@ always @(posedge clk or posedge reset)
         BRK2    : state <= BRK3;
         BRK3    : state <= JMP0;
 
+        WAIT    : state <= (IRQ | NMI_edge) ? DECODE : WAIT;   // DS
     endcase
 
 
